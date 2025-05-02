@@ -20,30 +20,6 @@ class MathChallengeScreen extends StatefulWidget {
 
 class _MathChallengeScreenState extends State<MathChallengeScreen> {
   late final FlutterRingtonePlayer _player;
-
-  @override
-  void initState() {
-    super.initState();
-    _player = FlutterRingtonePlayer();
-    _generateNewProblem();
-    _playAlarmSound();
-  }
-
-  void _playAlarmSound() {
-    _player.play(
-      android: AndroidSounds.alarm,
-      ios: IosSounds.alarm,
-      looping: true,
-      volume: 1.0,
-    );
-    _startVibration();
-  }
-
-  Future<void> _stopAlarmSound() async {
-    await _player.stop();
-    Vibration.cancel();
-  }
-
   late MathProblem _currentProblem;
   late List<int> _options;
   bool _isCorrect = false;
@@ -51,8 +27,9 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
+    _player = FlutterRingtonePlayer();
     _generateNewProblem();
+    _requestPermissions();
   }
 
   Future<void> _requestPermissions() async {
@@ -80,6 +57,21 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
         );
       }
     }
+  }
+
+  void _playAlarmSound() {
+    _player.play(
+      android: AndroidSounds.alarm,
+      ios: IosSounds.alarm,
+      looping: true,
+      volume: 1.0,
+    );
+    _startVibration();
+  }
+
+  Future<void> _stopAlarmSound() async {
+    await _player.stop();
+    Vibration.cancel();
   }
 
   void _playAlarmSound() async {

@@ -8,16 +8,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:math_alarm_app_new/main.dart';
+import 'package:math_alarm_app_new/services/hive_alarm_service.dart';
 import 'package:math_alarm_app_new/services/notification_service.dart';
+import 'package:math_alarm_app_new/models/alarm.dart';
+
+// En lugar de usar Mock, implementa clases de prueba directamente
+class MockHiveAlarmService implements HiveAlarmService {
+  @override
+  Map<int, Alarm> getAlarms() => {};
+  
+  @override
+  Future<void> saveAlarm(Alarm alarm) async {}
+  
+  @override
+  Future<void> deleteAlarm(int id) async {}
+  
+  @override
+  Future<void> initialize() async {}
+  
+  @override
+  Future<void> clearAll() async {}
+  
+  @override
+  Future<void> close() async {}
+}
+
+class MockNotificationService implements NotificationService {
+  @override
+  Future<void> initialize() async {}
+  
+  @override
+  Future<bool> scheduleAlarm(Alarm alarm) async => true;
+  
+  @override
+  Future<void> cancelAlarm(int id) async {}
+  
+  @override
+  Future<void> cancelAllAlarms() async {}
+}
 
 void main() {
-  testWidgets('App renders correctly', (WidgetTester tester) async {
-    // Crear una instancia de NotificationService para pasar a MyApp
-    final notificationService = NotificationService();
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Crear un mock de HiveAlarmService
+    final mockHiveService = MockHiveAlarmService();
+    final notificationService = MockNotificationService();
     
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(notificationService: notificationService));
-
+    // Construir nuestra app y disparar un frame.
+    await tester.pumpWidget(MyApp(
+      notificationService: notificationService,
+      hiveAlarmService: mockHiveService,
+    ));
+    
     // Verificar que la aplicación se renderiza correctamente
     expect(find.text('Alarma Matemática'), findsOneWidget);
   });

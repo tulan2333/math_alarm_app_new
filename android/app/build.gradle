@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 35 // Actualiza aquí el compileSdkVersion a 35
+    compileSdkVersion 34 // Corregido de 35 a 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -42,7 +42,7 @@ android {
     defaultConfig {
         applicationId "com.tudominio.math_alarm_app_new"
         minSdkVersion 21
-        targetSdkVersion 35 // Actualiza también el targetSdkVersion a 35
+        targetSdkVersion 34 // Corregido de 35 a 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/alarm_provider.dart';
+import '../providers/theme_provider.dart';  // Importar el proveedor de tema
 import '../models/alarm.dart';
 import '../widgets/alarm_list_item.dart';
 import 'alarm_detail_screen.dart';
@@ -14,6 +15,19 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Alarma Matemática'),
         elevation: 0,
+        actions: [
+          // Botón para cambiar el tema
+          IconButton(
+            icon: Icon(
+              Provider.of<ThemeProvider>(context).isDarkMode
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+          ),
+        ],
       ),
       body: FutureBuilder(
         future: Provider.of<AlarmProvider>(context, listen: false).loadAlarms(),
