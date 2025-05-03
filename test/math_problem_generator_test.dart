@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
-import 'package:flutter_ringtone_player/android_sounds.dart'; // Añadir esta importación
-import 'package:flutter_ringtone_player/ios_sounds.dart'; // Añadir esta importación
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:math_alarm_app_new/utils/math_problem_generator.dart';
 
@@ -20,6 +18,7 @@ class MathChallengeScreen extends StatefulWidget {
 }
 
 class _MathChallengeScreenState extends State<MathChallengeScreen> {
+  late final AudioPlayer _player;
   late MathProblem _currentProblem;
   late List<int> _options;
   bool _isCorrect = false;
@@ -27,6 +26,7 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
   @override
   void initState() {
     super.initState();
+    _player = AudioPlayer();
     _generateNewProblem();
     _playAlarmSound(); // No necesitas await aquí porque initState no puede ser async
   }
@@ -38,18 +38,13 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
   }
 
   Future<void> _playAlarmSound() async {
-    final player = FlutterRingtonePlayer();
-    await player.play(
-      android: AndroidSounds.alarm, // Usar el tipo correcto
-      ios: IosSounds.alarm, // Usar el tipo correcto
-      looping: true,
-      volume: 1.0,
-    );
+    await _player.play(AssetSource('sounds/alarm_sound.mp3'));
+    await _player.setVolume(1.0);
+    await _player.setReleaseMode(ReleaseMode.loop);
   }
 
   Future<void> _stopAlarmSound() async {
-    final player = FlutterRingtonePlayer();
-    await player.stop();
+    await _player.stop();
   }
 
   void _checkAnswer(int selected) async {
@@ -66,6 +61,12 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
       });
       _generateNewProblem(); // Genera otro reto si falla
     }
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
   }
 
   @override

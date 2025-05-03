@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../models/alarm.dart';
 import '../providers/alarm_provider.dart';
 import '../services/notification_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class AlarmDetailScreen extends StatefulWidget {
   final Alarm? alarm;
@@ -14,53 +16,56 @@ class AlarmDetailScreen extends StatefulWidget {
 }
 
 class _AlarmDetailScreenState extends State<AlarmDetailScreen> {
+  late Alarm _currentAlarm;
+  final _formKey = GlobalKey<FormState>();
   late TimeOfDay _selectedTime;
   late List<bool> _selectedDays;
   late TextEditingController _labelController;
   late int _selectedDifficulty;
-  
+
   final List<String> _daysOfWeek = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  
+
   @override
   void initState() {
     super.initState();
-    
-    // Inicializar con valores de la alarma existente o valores predeterminados
-    if (widget.alarm != null) {
-      _selectedTime = TimeOfDay(
-        hour: widget.alarm!.time.hour,
-        minute: widget.alarm!.time.minute,
-      );
-      _selectedDays = List.from(widget.alarm!.days);
-      _labelController = TextEditingController(text: widget.alarm!.label);
-      _selectedDifficulty = widget.alarm!.mathProblemDifficulty;
-    } else {
-      _selectedTime = TimeOfDay.now();
-      _selectedDays = List.filled(7, false);
-      _labelController = TextEditingController();
-      _selectedDifficulty = 1;
-    }
+
+    // Inicializar alarma con valores existentes o predeterminados
+    _currentAlarm = widget.alarm?.copyWith() ??
+        Alarm(
+          id: DateTime.now().millisecondsSinceEpoch,
+          time: DateTime.now(),
+          days: List.filled(7, false),
+        );
+
+    // Inicializar controladores de UI con valores de la alarma
+    _selectedTime = TimeOfDay(
+      hour: _currentAlarm.time.hour,
+      minute: _currentAlarm.time.minute,
+    );
+    _selectedDays = List.from(_currentAlarm.days);
+    _labelController = TextEditingController(text: _currentAlarm.label);
+    _selectedDifficulty = _currentAlarm.mathProblemDifficulty;
   }
-  
+
   @override
   void dispose() {
     _labelController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
     );
-    
+
     if (pickedTime != null && pickedTime != _selectedTime) {
       setState(() {
         _selectedTime = pickedTime;
       });
     }
   }
-  
+
   void _saveAlarm() {
     // Verificar que al menos un día esté seleccionado
     if (!_selectedDays.contains(true)) {
@@ -72,7 +77,7 @@ class _AlarmDetailScreenState extends State<AlarmDetailScreen> {
       );
       return;
     }
-    
+
     final now = DateTime.now();
     final alarmTime = DateTime(
       now.year,
@@ -81,39 +86,85 @@ class _AlarmDetailScreenState extends State<AlarmDetailScreen> {
       _selectedTime.hour,
       _selectedTime.minute,
     );
-    
+
     final alarmProvider = Provider.of<AlarmProvider>(context, listen: false);
     final notificationService = Provider.of<NotificationService>(context, listen: false);
-    
+
+    // Usar _currentAlarm para guardar el customSoundUri
+    final alarmToSave = (widget.alarm == null)
+        ? Alarm(
+            id: DateTime.now().millisecondsSinceEpoch,
+            time: alarmTime,
+            days: _selectedDays,
+            isActive: true,
+            label: _labelController.text,
+            mathProblemDifficulty: _selectedDifficulty,
+            customSoundUri: _currentAlarm.customSoundUri, // Añadir esto
+          )
+        : widget.alarm!.copyWith(
+            time: alarmTime,
+            days: _selectedDays,
+            label: _labelController.text,
+            mathProblemDifficulty: _selectedDifficulty,
+            customSoundUri: _currentAlarm.customSoundUri, // Añadir esto
+          );
+
     if (widget.alarm == null) {
-      // Crear nueva alarma
-      final newAlarm = Alarm(
-        id: DateTime.now().millisecondsSinceEpoch,
-        time: alarmTime,
-        days: _selectedDays,
-        isActive: true,
-        label: _labelController.text,
-        mathProblemDifficulty: _selectedDifficulty,
-      );
-      
-      alarmProvider.addAlarm(newAlarm);
-      notificationService.scheduleAlarm(newAlarm);
+      alarmProvider.addAlarm(alarmToSave);
     } else {
-      // Actualizar alarma existente
-      final updatedAlarm = widget.alarm!.copyWith(
-        time: alarmTime,
-        days: _selectedDays,
-        label: _labelController.text,
-        mathProblemDifficulty: _selectedDifficulty,
-      );
-      
-      alarmProvider.updateAlarm(updatedAlarm);
-      notificationService.scheduleAlarm(updatedAlarm);
+      alarmProvider.updateAlarm(alarmToSave);
     }
-    
+    notificationService.scheduleAlarm(alarmToSave);
+
     Navigator.of(context).pop();
   }
-  
+
+  // Mover este método dentro de la clase
+  String _getFileName(String path) {
+    return path.split('/').last;
+  }
+
+  // Mover este método dentro de la clase
+  Future<void> _showSoundPicker(BuildContext context) async {
+    if (Platform.isAndroid) {
+      try {
+        final FilePickerResult? result = await FilePicker.platform.pickFiles(
+          type: FileType.audio,
+        );
+
+        if (result != null && result.files.single.path != null) {
+          // Usar setState para actualizar _currentAlarm
+          setState(() {
+            _currentAlarm = _currentAlarm.copyWith(
+              customSoundUri: result.files.single.path!,
+            );
+          });
+
+          // Usar mounted para verificar si el widget está montado
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Sonido seleccionado: ${_getFileName(result.files.single.path!)}')),
+            );
+          }
+        }
+      } catch (e) {
+        // Usar mounted para verificar si el widget está montado
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al seleccionar sonido: $e')),
+          );
+        }
+      }
+    } else if (Platform.isIOS) {
+      // Usar mounted para verificar si el widget está montado
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Selección de sonidos personalizados no disponible en iOS')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -279,6 +330,15 @@ class _AlarmDetailScreenState extends State<AlarmDetailScreen> {
                 ),
               ),
             ),
+            // Añadir esta sección en el formulario
+            ListTile(
+              title: const Text('Sonido de alarma'),
+              subtitle: Text(_currentAlarm.customSoundUri != null
+                  ? _getFileName(_currentAlarm.customSoundUri!)
+                  : 'Sonido predeterminado'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showSoundPicker(context),
+            ),
           ],
         ),
       ),
@@ -290,8 +350,9 @@ class _AlarmDetailScreenState extends State<AlarmDetailScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
-}
+} // Fin de la clase _AlarmDetailScreenState
 
+// La clase DaySelector permanece fuera como un widget separado
 class DaySelector extends StatelessWidget {
   final String day;
   final bool isSelected;

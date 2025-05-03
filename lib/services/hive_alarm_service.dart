@@ -7,9 +7,14 @@ class HiveAlarmService {
   
   /// Inicializa Hive y abre el box de alarmas
   Future<void> initialize() async {
-    await Hive.initFlutter();
-    Hive.registerAdapter(AlarmAdapter());
-    _alarmsBox = await Hive.openBox<Alarm>(_boxName);
+    // Evitar inicializar Hive si ya está inicializado
+    if (!Hive.isBoxOpen(_boxName)) {
+      // Solo registrar el adaptador si no está registrado
+      if (!Hive.isAdapterRegistered(0)) { // 0 es el typeId de AlarmAdapter
+        Hive.registerAdapter(AlarmAdapter());
+      }
+      _alarmsBox = await Hive.openBox<Alarm>(_boxName);
+    }
   }
   
   /// Obtiene todas las alarmas

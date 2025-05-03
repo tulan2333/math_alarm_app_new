@@ -1,7 +1,7 @@
 plugins {
-    id "com.android.application" version "7.3.1" // Actualiza el plugin de Android Gradle
-    id "kotlin-android" version "1.8.0" // Actualiza Kotlin
-    id "dev.flutter.flutter-gradle-plugin"
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'dev.flutter.flutter-gradle-plugin'
 }
 
 def localProperties = new Properties()
@@ -23,9 +23,11 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 34 // Corregido de 35 a 34
+    compileSdk = 35
     ndkVersion flutter.ndkVersion
-
+    
+    namespace "com.tudominio.math_alarm_app_new"
+    
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -42,20 +44,22 @@ android {
     defaultConfig {
         applicationId "com.tudominio.math_alarm_app_new"
         minSdkVersion 21
-        targetSdkVersion 34 // Corregido de 35 a 34
+        targetSdkVersion 35  // Asegúrate de que sea 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug // Aquí debes configurar el archivo de claves para la firma de la APK si es necesario
+            signingConfig signingConfigs.debug
         }
     }
 }
 
 flutter {
-    source '../..' // Esta es la configuración que conecta Flutter con el proyecto Android
+    source '../..'
 }
 
-dependencies {}
+dependencies {
+    // Si hay alguna referencia a kotlin, asegúrate de que use la misma versión
+}

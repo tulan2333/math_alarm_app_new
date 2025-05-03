@@ -29,8 +29,17 @@ class NotificationService {
         initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           // Manejar la respuesta de notificación aquí
+          print('Notificación recibida: ${response.payload}');
         },
       );
+      
+      // Verificar si las notificaciones están habilitadas
+      final notificationSettings = await _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.getNotificationAppLaunchDetails();
+      
+      print('Notificaciones habilitadas: ${notificationSettings?.didNotificationLaunchApp}');
+      
     } catch (e) {
       print('Error al inicializar las notificaciones: $e');
       // Aquí podrías implementar una lógica de reintentos o notificar al usuario
@@ -39,17 +48,23 @@ class NotificationService {
   
   Future<bool> scheduleAlarm(Alarm alarm) async {
     try {
-      // Cancelar alarma existente si existe
-      await _notificationsPlugin.cancel(alarm.id);
+      // Cancelar alarmas existentes para este ID
+      await cancelAlarm(alarm.id);
       
-      if (!alarm.isActive) return true;
+      if (!alarm.isActive) {
+        print('Alarma ${alarm.id} no está activa, no se programará');
+        return true;
+      }
       
-      // Programar la alarma para cada día seleccionado
-      for (int i = 0; i < 7; i++) {
+      // Programar nuevas alarmas para cada día seleccionado
+      bool anyAlarmScheduled = false;
+      
+      for (int i = 0; i < alarm.days.length; i++) {
         if (alarm.days[i]) {
           final scheduledDate = _nextInstanceOfDay(i, alarm.hour, alarm.minute);
+          print('Programando alarma ${alarm.id} para el día $i a las ${alarm.hour}:${alarm.minute}');
+          print('Fecha programada: ${scheduledDate.toString()}');
           
-          // En el método scheduleAlarm, corrige:
           await _notificationsPlugin.zonedSchedule(
             alarm.id + i, // ID único para cada día
             'Alarma Matemática',
@@ -73,16 +88,17 @@ class NotificationService {
               ),
             ),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            // Corregir esta línea:
-            dateTimeInterpretation: DateTimeInterpretation.absoluteTime,
-            matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+            matchDateTimeComponents: DateTimeComponents.time,
           );
+          
+          print('Alarma ${alarm.id} programada con éxito para el día $i');
+          anyAlarmScheduled = true;
         }
       }
       
-      return true;
+      return anyAlarmScheduled;
     } catch (e) {
-      print('Error al programar la alarma: $e');
+      print('Error al programar alarma ${alarm.id}: $e');
       return false;
     }
   }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart'; // Añadir esta importación
 import '../utils/math_problem_generator.dart';
+import '../providers/alarm_provider.dart'; // Añadir esta importación
+import '../models/alarm.dart'; // Añadir esta importación
 import 'package:vibration/vibration.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -19,7 +22,7 @@ class MathChallengeScreen extends StatefulWidget {
 }
 
 class _MathChallengeScreenState extends State<MathChallengeScreen> {
-  late final FlutterRingtonePlayer _player;
+  late final AudioPlayer _player;
   late MathProblem _currentProblem;
   late List<int> _options;
   bool _isCorrect = false;
@@ -27,7 +30,7 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
   @override
   void initState() {
     super.initState();
-    _player = FlutterRingtonePlayer();
+    _player = AudioPlayer();
     _generateNewProblem();
     _requestPermissions();
   }
@@ -59,35 +62,51 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
     }
   }
 
-  void _playAlarmSound() {
-    _player.play(
-      android: AndroidSounds.alarm,
-      ios: IosSounds.alarm,
-      looping: true,
-      volume: 1.0,
-    );
-    _startVibration();
-  }
-
-  Future<void> _stopAlarmSound() async {
-    await _player.stop();
-    Vibration.cancel();
-  }
-
   void _playAlarmSound() async {
-    // Verificar permisos antes de reproducir
     if (await Permission.notification.isGranted) {
-      final player = FlutterRingtonePlayer();
       try {
-        await player.play(
-          android: AndroidSounds.alarm,
-          ios: IosSounds.alarm,
-          looping: true,
-          volume: 1.0,
+        // Obtener la alarma del provider
+        final alarmProvider = Provider.of<AlarmProvider>(context, listen: false);
+        final alarm = alarmProvider.alarms.firstWhere(
+          (a) => a.id == widget.alarmId,
+          orElse: () => throw Exception('Alarma no encontrada'),
         );
+        
+        print('Reproduciendo sonido para alarma ID: ${widget.alarmId}');
+        
+        if (alarm.customSoundUri != null && alarm.customSoundUri!.isNotEmpty) {
+          // Reproducir sonido personalizado
+          print('Usando sonido personalizado: ${alarm.customSoundUri}');
+          await _player.play(DeviceFileSource(alarm.customSoundUri!));
+        } else {
+          // Reproducir sonido predeterminado
+          print('Usando sonido predeterminado: assets/sounds/alarm_sound.mp3');
+          await _player.play(AssetSource('sounds/alarm_sound.mp3'));
+        }
+        
+        await _player.setVolume(1.0);
+        await _player.setReleaseMode(ReleaseMode.loop);
+        
         _startVibration();
       } catch (e) {
         print('Error al reproducir el sonido: $e');
+        // Fallback a sonido predeterminado si hay error
+        try {
+          print('Intentando reproducir sonido predeterminado como fallback');
+          await _player.play(AssetSource('sounds/alarm_sound.mp3'));
+        } catch (e) {
+          print('Error al reproducir sonido predeterminado: $e');
+        }
+      }
+    }
+  }
+
+  void _startVibration() async {
+    if (await Vibration.hasVibrator() ?? false) {
+      if (await Vibration.hasAmplitudeControl() ?? false) {
+        Vibration.vibrate(pattern: [500, 1000, 500, 1000], amplitude: 128, repeat: 0);
+      } else {
+        Vibration.vibrate(pattern: [500, 1000, 500, 1000], repeat: 0);
       }
     }
   }
@@ -99,9 +118,8 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
   }
 
   Future<void> _stopAlarmSound() async {
-    final player = FlutterRingtonePlayer();
-    await player.stop();
-    Vibration.cancel(); // <- stops vibration!
+    await _player.stop();
+    Vibration.cancel(); // Detiene la vibración
   }
 
   void _checkAnswer(int selected) async {
@@ -118,6 +136,13 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
       });
       _generateNewProblem(); // Si quieres castigar errores
     }
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    Vibration.cancel();
+    super.dispose();
   }
 
   @override
@@ -151,15 +176,5 @@ class _MathChallengeScreenState extends State<MathChallengeScreen> {
         ),
       ),
     );
-  }
-}
-
-void _startVibration() async {
-  if (await Vibration.hasVibrator() ?? false) {
-    if (await Vibration.hasAmplitudeControl() ?? false) {
-      Vibration.vibrate(pattern: [0, 500, 1000, 500, 1000], amplitude: 128, repeat: 0);
-    } else {
-      Vibration.vibrate(pattern: [0, 500, 1000, 500, 1000], repeat: 0);
-    }
   }
 }

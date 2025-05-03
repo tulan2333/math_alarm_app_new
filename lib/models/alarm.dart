@@ -26,10 +26,14 @@ class Alarm {
   @HiveField(5)
   final int mathProblemDifficulty;
   
+  @HiveField(6)
+  final String? customSoundUri; // Nuevo campo para el sonido personalizado
+  
   // Getters necesarios para NotificationService
   int get hour => time.hour;
   int get minute => time.minute;
   String get title => label.isNotEmpty ? label : 'Alarma Matemática';
+  int get difficulty => mathProblemDifficulty;
 
   Alarm({
     required this.id,
@@ -38,8 +42,10 @@ class Alarm {
     this.isActive = true,
     this.label = '',
     this.mathProblemDifficulty = 1,
+    this.customSoundUri,
   });
 
+  /// Crea una copia de esta alarma con los campos especificados actualizados.
   Alarm copyWith({
     int? id,
     DateTime? time,
@@ -47,6 +53,7 @@ class Alarm {
     bool? isActive,
     String? label,
     int? mathProblemDifficulty,
+    String? customSoundUri,
   }) {
     return Alarm(
       id: id ?? this.id,
@@ -55,6 +62,7 @@ class Alarm {
       isActive: isActive ?? this.isActive,
       label: label ?? this.label,
       mathProblemDifficulty: mathProblemDifficulty ?? this.mathProblemDifficulty,
+      customSoundUri: customSoundUri ?? this.customSoundUri,
     );
   }
 
@@ -66,6 +74,7 @@ class Alarm {
       'isActive': isActive,
       'label': label,
       'mathProblemDifficulty': mathProblemDifficulty,
+      'customSoundUri': customSoundUri,
     };
   }
 
@@ -77,17 +86,7 @@ class Alarm {
       isActive: json['isActive'],
       label: json['label'] ?? '',
       mathProblemDifficulty: json['mathProblemDifficulty'] ?? 1,
+      customSoundUri: json['customSoundUri'],
     );
   }
-}
-
-/// Método que programa una alarma en el sistema de notificaciones.
-///
-/// Recibe un objeto [Alarm] y programa notificaciones para cada día seleccionado.
-/// Retorna `true` si la programación fue exitosa, `false` en caso contrario.
-///
-/// Lanza una excepción si hay problemas con el sistema de notificaciones.
-Future<bool> scheduleAlarm(Alarm alarm) async {
-  // Implementación del método
-  return true; // Asegurarse de devolver un valor booleano
 }

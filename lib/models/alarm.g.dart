@@ -23,13 +23,14 @@ class AlarmAdapter extends TypeAdapter<Alarm> {
       isActive: fields[3] as bool,
       label: fields[4] as String,
       mathProblemDifficulty: fields[5] as int,
+      customSoundUri: fields[6] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Alarm obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class AlarmAdapter extends TypeAdapter<Alarm> {
       ..writeByte(4)
       ..write(obj.label)
       ..writeByte(5)
-      ..write(obj.mathProblemDifficulty);
+      ..write(obj.mathProblemDifficulty)
+      ..writeByte(6)
+      ..write(obj.customSoundUri);
   }
 
   @override

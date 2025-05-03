@@ -1,0 +1,2 @@
+/Users/adrianrico/math_alarm_app_new/android/app/.cxx/RelWithDebInfo/4o1y0m2e/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/adrianrico/math_alarm_app_new/android/app/.cxx/RelWithDebInfo/4o1y0m2e/arm64-v8a/CMakeFiles/rebuild_cache.dir
