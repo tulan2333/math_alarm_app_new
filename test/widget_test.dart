@@ -11,6 +11,8 @@ import 'package:math_alarm_app_new/main.dart';
 import 'package:math_alarm_app_new/services/hive_alarm_service.dart';
 import 'package:math_alarm_app_new/services/notification_service.dart';
 import 'package:math_alarm_app_new/models/alarm.dart';
+// Comentamos esta importación para evitar problemas en las pruebas
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // En lugar de usar Mock, implementa clases de prueba directamente
 class MockHiveAlarmService implements HiveAlarmService {
@@ -33,18 +35,21 @@ class MockHiveAlarmService implements HiveAlarmService {
   Future<void> close() async {}
 }
 
-class MockNotificationService implements NotificationService {
+// Creamos una clase mock más simple que no dependa de FlutterLocalNotificationsPlugin
+class MockNotificationService extends NotificationService {
   @override
   Future<void> initialize() async {}
   
   @override
-  Future<bool> scheduleAlarm(Alarm alarm) async => true;
+  Future<void> scheduleAlarm(Alarm alarm) async {}
   
   @override
   Future<void> cancelAlarm(int id) async {}
   
   @override
-  Future<void> cancelAllAlarms() async {}
+  int _getAndroidVersion() {
+    return 0;
+  }
 }
 
 void main() {

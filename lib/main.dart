@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Añadir este import para MethodChannel
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -11,6 +12,27 @@ import 'models/alarm.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configurar canal para restaurar alarmas
+  const platform = MethodChannel('com.tudominio.math_alarm_app_new/alarm_restore');
+  platform.setMethodCallHandler((call) async {
+    if (call.method == 'restoreAlarms') {
+      // Obtener el servicio de notificaciones
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+      
+      // Obtener todas las alarmas activas
+      final hiveService = HiveAlarmService();
+      await hiveService.initialize();
+      final alarmProvider = AlarmProvider(hiveAlarmService: hiveService);
+      await alarmProvider.loadAlarms();
+      
+      // Reprogramar todas las alarmas activas
+      for (final alarm in alarmProvider.alarms.where((a) => a.isActive)) {
+        await notificationService.scheduleAlarm(alarm);
+      }
+    }
+  });
 
   // Inicializar Hive
   await Hive.initFlutter();
